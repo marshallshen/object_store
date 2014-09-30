@@ -1,0 +1,10 @@
+#define ACCESS_BITS 5
+#define ACCESS_FILE "Accessfile"
+#define TMP_ACCESS_FILE "Accessfile.tmp"
+#define DEFAULT_OWNER_PRIVILEGE "rwxpv"
+#define DEFAULT_GROUP_PRIVILEGE "r--pv"
+#define DEFAULT_OTHER_PRIVILEGE "r---v"
+#define DEFAULT_FULL_PRIVILEGE "rwxpv"
+#define MAX_DATA 100
+#define NOT_PERMITTED_CHAR "-"
+#define OBJECT_DIR "objects/"
