@@ -1,43 +1,22 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "constants.h"
-#include "extio.h"
-#include "permissions.h"
+#include "acl_adapters.h"
 
 int main(int argc, char *argv[]){
-  char username[MAX_DATA];
-  char groupname[MAX_DATA];
-  char objname[MAX_DATA];
-  char action[ACCESS_BITS];
+  char *action, *objname;
 
-  strcpy(username, get_flagged_value(argc, argv, "-u"));
-  strcpy(groupname, get_flagged_value(argc, argv, "-g"));
-  strcpy(action, get_flagged_value(argc, argv, "-a"));
-  strcpy(objname, argv[argc-1]);
+  user_id = getuid();
+  group_id = getgid();
 
-  //fetch filename for ACCESS_FILE
-  char filename[MAX_DATA];
-  char ownername[MAX_DATA];
-  if (strchr(objname, '+') == NULL)
-    {
-      snprintf(filename, sizeof(filename), "%s%s%s", username, "+", objname);
-      strcpy(ownername, username);
-    }
-  else
-    {
-      snprintf(filename, sizeof(filename), "%s", objname);
-      strcpy(ownername, strtok(objname, "+"));
-    }
+  action = malloc(1);
+  strncpy(action, find_optional_value(argc, argv, "-x"), 1);
 
-  char *permission = get_permission(username, ownername, groupname, filename);
-  if(strstr(permission, action) == NULL)
-    {
-      printf("Denied\n");
-    }
-  else
-    {
-      printf("Allowed\n");
-    }
+  objname = malloc(MAX_DATA);
+  strncpy(objname, argv[argc-1], MAX_DATA);
+
+  if (file_exists(filename(objname))){
+    if (action_allowed(objname, user_id, group_id, action)) { printf("Allowed. \n"); }
+    else { printf("Denied \n"); }
+  }
+  else { printf("[TEST ACL ERROR] File %s does not exist.\n", filename(objname));}
+
   return 0;
 }

@@ -1,58 +1,32 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include "constants.h"
-#include "extio.h"
+#include "acl_adapters.h"
 
-void upsert_directory(char *username){
-  struct stat dir_st = {0};
-  char dir_name[strlen(OBJECT_DIR)  + strlen(username) + 1];
-  snprintf(dir_name, sizeof(dir_name), "%s%s", OBJECT_DIR, username);
-  if (stat(dir_name, &dir_st) == -1) {
-    mkdir(dir_name, 0700);
+void create_file(char *username, char *objname){
+  char filename[strlen(OBJECT_DIR) + strlen(username) + strlen(CONCAT) + strlen(objname) + 1];
+  char text[MAX_DATA];
+
+  snprintf(filename, sizeof(filename), "%s%s%s%s", OBJECT_DIR, username, CONCAT, objname);
+
+  FILE *f = fopen(filename, "w");
+  while (fgets(text, MAX_DATA-1, stdin)){
+   fprintf(f, "%s", text);
   }
-}
-
-void set_owner_acl(char *username, char *objname){
-  FILE *acl_f = fopen(ACCESS_FILE, "a+");
-  // Default owner with ALL privilege
-  fprintf(acl_f, "%s%s%s %s%s%s\n", username, "+", objname, DEFAULT_OWNER_PRIVILEGE, DEFAULT_GROUP_PRIVILEGE, DEFAULT_OTHER_PRIVILEGE);
-
-  fclose(acl_f);
+  printf("File %s created. \n", filename);
+  fclose(f);
 }
 
 int main(int argc, char *argv[])
 {
-  char username[MAX_DATA];
-  char groupname[MAX_DATA];
   char objname[MAX_DATA];
-  char* slash = "/";
+  char username[MAX_DATA];
 
-  strcpy(username, get_flagged_value(argc, argv, "-u"));
-  strcpy(groupname, get_flagged_value(argc, argv, "-g"));
+  user_id = getuid();
+  group_id = getgid();
+
   strcpy(objname, argv[argc-1]);
+  strcpy(username, username_from_uid(user_id));
 
-  upsert_directory(username);
-
-  //upsert file
-  char filename[strlen(OBJECT_DIR) + strlen(username) + strlen(slash) + strlen(objname) + 1];
-  snprintf(filename, sizeof(filename), "%s%s%s%s", OBJECT_DIR, username, slash, objname);
-
-  //set acl
-  struct stat file_st = {0};
-  if (stat(filename, &file_st) == -1) {
-    set_owner_acl(username, objname);
-    //TODO set_group_acl(groupname, objname);
-  }
-
-  FILE *f = fopen(filename, "w");
-  char text[MAX_DATA];
-  while (fgets(text, MAX_DATA-1, stdin)){
-   fprintf(f, "%s", text);
-  }
-  fclose(f);
+  create_acl(objname, user_id, group_id);
+  create_file(username, objname);
 
   return 0;
 }
