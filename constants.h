@@ -2,8 +2,11 @@
 #define ACL_DIR "acls/"
 #define ACL_EXT ".acl"
 #define ADMIN "admin"
+#define BYTE_COUNT 64
 #define CONCAT "+"
 #define DELIMITER "."
+#define KEY_DIR "keys/"
+#define KEY_EXT ".key"
 #define MAX_ACL_ENTRIES 10
 #define MAX_DATA 100
 #define OBJECT_DIR "objects/"

@@ -1,4 +1,4 @@
-FLAGS=-Wall -g -std=c99
+FLAGS=-Wall -g -std=c99 -lssl -lcrypto -Wno-pointer-sign
 export CC=c99
 
 build:
@@ -52,42 +52,7 @@ clean:
 	chmod 777 objects
 	touch newacl
 	rm newacl
-put:
-	./objput -m doc < testfile
-get:
-	./objput doc < testfile
-	./objget mshen+doc
-list:
-	./objput doc < testfile
-	./objput first_doc < testfile
-	./objput second_doc < testfile
-	mv objects/mshen+doc objects/doc
-	./objlist
-	./objlist -l
-get_acl:
-	./objput doc < testfile
-	./objgetacl mshen+doc
-set_acl:
-	./objput doc < testfile
-	cat acls/mshen+doc.acl
-	./objgetacl mshen+doc
-	echo "*.public wr" > newacl
-	./objsetacl mshen+doc < newacl
-	./objgetacl mshen+doc
-set_bad_acl:
-	./objput doc < testfile
-	cat acls/mshen+doc.acl
-	./objgetacl mshen+doc
-	echo "*.public no a good acl" > newacl
-	./objsetacl mshen+doc < newacl
-	./objgetacl mshen+doc
-test_acl:
-	./objput doc < testfile
-	cat acls/mshen+doc.acl
-	./objgetacl mshen+doc
-	echo "*.public wr" > newacl
-	./objsetacl mshen+doc < newacl
-	./objtestacl -x w mshen+doc
-	./objtestacl -x r mshen+doc
-	./objtestacl -x p mshen+doc
+	rm -rf keys
+	mkdir keys
+	chmod 777 keys
 

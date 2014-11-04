@@ -36,6 +36,19 @@ char *acl_filename(char *objname) {
   }
 }
 
+char *key_filename(char *objname) {
+  if (strstr(objname, KEY_DIR) != NULL)
+    return objname;
+  else {
+    static char *key_filename;
+
+    key_filename = malloc(MAX_DATA);
+    snprintf(key_filename, MAX_DATA, "%s%s%s", KEY_DIR, objname, KEY_EXT);
+
+    return key_filename;
+  }
+}
+
 char *find_optional_value(int argc, char *argv[], char *flag){
   static char *optional_value;
 

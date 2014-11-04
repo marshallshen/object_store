@@ -22,13 +22,11 @@ char *find_acl(char *objname, uid_t user_id, gid_t group_id) {
     FILE *f = fopen(acl_filename(objname), READ);
     while (fgets(acl_line, MAX_DATA, f) != NULL){
       if (strstr(acl_line, username) != NULL) {
-        char *token;
-        token = strtok(acl_line, SPACE);
+        strtok(acl_line, SPACE);
         return strtok(NULL, SPACE);
       }
       else if (group_name != NULL && strstr(acl_line, group_name) != NULL) {
-        char *token;
-        token = strtok(acl_line, SPACE);
+        strtok(acl_line, SPACE);
         return strtok(NULL, SPACE);
       }
       else continue;
@@ -49,11 +47,10 @@ char *find_acl(char *objname, uid_t user_id, gid_t group_id) {
 */
 
 void create_acl(const char *objname, uid_t owner_id, gid_t group_id){
-  char *owner_name, *group_name, *acl_file, *owner_acl_entry, *admin_acl_entry;
-  int acl_file_size, owner_acl_entry_size, admin_acl_entry_size;
+  char *owner_name, *acl_file, *owner_acl_entry;
+  int acl_file_size, owner_acl_entry_size;
 
   owner_name = username_from_uid(owner_id);
-  group_name = groupname_from_gid(group_id);
 
   acl_file_size = strlen(ACL_DIR) + strlen(owner_name) + strlen(CONCAT) + strlen(objname) + strlen(ACL_EXT) + 1;
   acl_file = malloc(acl_file_size);
@@ -68,13 +65,8 @@ void create_acl(const char *objname, uid_t owner_id, gid_t group_id){
     owner_acl_entry = malloc(owner_acl_entry_size);
     snprintf(owner_acl_entry, owner_acl_entry_size, "%s%s%s%s%s", owner_name, DELIMITER, WILD_MATCH, SPACE, S_FULL);
 
-    admin_acl_entry_size = strlen(WILD_MATCH) + strlen(DELIMITER) + strlen(ADMIN) + strlen(SPACE) + strlen(PERMIT) + strlen(VIEW) + 1;
-    admin_acl_entry = malloc(admin_acl_entry_size);
-    snprintf(admin_acl_entry, admin_acl_entry_size, "%s%s%s%s%s%s", WILD_MATCH, DELIMITER, ADMIN, SPACE, PERMIT, VIEW);
-
     FILE *f = fopen(acl_file, "w");
     fprintf(f, "%s\n", owner_acl_entry);
-    fprintf(f, "%s\n", admin_acl_entry);
     fclose(f);
   }
 }

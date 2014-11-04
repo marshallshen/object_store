@@ -1,32 +1,67 @@
 #include "acl_adapters.h"
+#include "crypto_support.h"
 
-void create_file(char *username, char *objname){
+#define BUFFERSIZE 128
+#define BIG_BUFFERSIZE 1024
+
+void save_encryption_key(char *username, char *objname, int ciphertext_len, char *passphrase, unsigned char *iv) {
+  char filename[strlen(username) + strlen(CONCAT) + strlen(objname) + 1];
+  FILE *f;
+  char ciphertext_size[20];
+
+  sprintf(ciphertext_size, "%d", ciphertext_len);
+
+  strcat(passphrase, DELIMITER);
+  strcat(passphrase, iv);
+  strcat(passphrase, DELIMITER);
+  strcat(passphrase, ciphertext_size);
+  snprintf(filename, sizeof(filename), "%s%s%s", username, CONCAT, objname);
+
+  f = fopen(key_filename(filename), "w");
+  fprintf(f, "%s", passphrase);
+  fclose(f);
+
+  printf("[Objput SUCCESS] Encryption file %s created. \n", key_filename(filename));
+}
+
+void create_encrypted_file(char *username, char *objname, char *passphrase){
   char filename[strlen(OBJECT_DIR) + strlen(username) + strlen(CONCAT) + strlen(objname) + 1];
-  char text[MAX_DATA];
+  char buffer[BUFFERSIZE];
+  char *plaintext[BIG_BUFFERSIZE];
+  unsigned char *iv = create_init_vector();
+  unsigned char *key = md5_key(passphrase);
 
   snprintf(filename, sizeof(filename), "%s%s%s%s", OBJECT_DIR, username, CONCAT, objname);
 
-  FILE *f = fopen(filename, "w");
-  while (fgets(text, MAX_DATA-1, stdin)){
-   fprintf(f, "%s", text);
+  // Get plaintext
+  while (fgets(buffer, BUFFERSIZE, stdin) != NULL){
+    if ((strlen(plaintext) + strlen(buffer)) < BIG_BUFFERSIZE) { strcat(plaintext, buffer); }
+    else { printf("[Objput ERROR]: input size too large. \n"); exit(-1); }
   }
-  printf("File %s created. \n", filename);
-  fclose(f);
+
+  // Write encrypted file
+  Crypto crypto = write_encrypted_file(filename, plaintext, key, iv);
+  // Save encryption key in a file
+  save_encryption_key(username, objname, crypto.text_len, passphrase, iv);
+
+  printf("[Objput SUCCESS] File %s created. \n", filename);
 }
 
 int main(int argc, char *argv[])
 {
   char objname[MAX_DATA];
   char username[MAX_DATA];
+  char passphrase[MAX_DATA];
 
   user_id = getuid();
   group_id = getgid();
 
   strcpy(objname, argv[argc-1]);
   strcpy(username, username_from_uid(user_id));
+  strncpy(passphrase, find_optional_value(argc, argv, "-k"), MAX_DATA);
 
   create_acl(objname, user_id, group_id);
-  create_file(username, objname);
+  create_encrypted_file(username, objname, passphrase);
 
   return 0;
 }
