@@ -45,8 +45,9 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
   /* Finalise the decryption. Further plaintext bytes may be written at
    * this stage.
    */
-  if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len))
+  if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) {
     printf("[CRYPTO SUPPORT ERROR WARNING]: Decryption error detected..\n\n");
+  }
   plaintext_len += len;
 
   /* Clean up */
@@ -79,6 +80,7 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
   /* Provide the message to be encrypted, and obtain the encrypted output.
    * EVP_EncryptUpdate can be called multiple times if necessary
    */
+
   if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
     handleErrors("ENC: fail to initiialize update.");
   ciphertext_len = len;
@@ -114,15 +116,28 @@ char *create_init_vector() {
   return civ;
 }
 
-unsigned char *md5_key(char *passphrase){
-  unsigned char hex_key[MD5_DIGEST_LENGTH];
-  static unsigned char key[128];
+unsigned char *md5_key(char *passphrase, int length){
+    int n;
+    MD5_CTX c;
+    unsigned char digest[16];
+    char *key = malloc(128);
 
-  MD5(passphrase, strlen(passphrase), hex_key);
-  for(int i = 0; i < 128; i++)
-    sprintf(&key[i], "%02x", (unsigned int)key[i]);
+    MD5_Init(&c);
 
-  return key;
+    while (length > 0) {
+        if (length > 512) { MD5_Update(&c, passphrase, 512); }
+        else { MD5_Update(&c, passphrase, length); }
+        length -= 512;
+        passphrase += 512;
+    }
+
+    MD5_Final(digest, &c);
+
+    for (n = 0; n < 16; ++n) {
+        snprintf(&(key[n*2]), 16*2, "%02x", (unsigned int)digest[n]);
+    }
+
+    return key;
 }
 
 typedef struct {
@@ -172,6 +187,7 @@ unsigned char *decrypted_text(unsigned char *ciphertext, int ciphertext_len, uns
 
   plaintext = malloc(ciphertext_len);
   /* Decrypt the ciphertext */
+
   plaintext_len = decrypt(ciphertext, ciphertext_len, key, iv,
     plaintext);
 

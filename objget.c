@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     group_id = getgid();
 
     if (read_allowed(objname, user_id, group_id)) {
-      key = md5_key(find_passphrase(objname));
+      key = md5_key(find_passphrase(objname), strlen(find_passphrase(objname)));
       ciphertext_len = atoi(find_ciphertext_len(objname));
       read_encrypted_file(filename(objname), ciphertext_len, key, find_iv(objname));
     }

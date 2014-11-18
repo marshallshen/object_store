@@ -2,7 +2,6 @@
 #include "crypto_support.h"
 
 #define BUFFERSIZE 128
-#define BIG_BUFFERSIZE 1024
 
 void save_encryption_key(char *username, char *objname, int ciphertext_len, char *passphrase, unsigned char *iv) {
   char filename[strlen(username) + strlen(CONCAT) + strlen(objname) + 1];
@@ -27,16 +26,18 @@ void save_encryption_key(char *username, char *objname, int ciphertext_len, char
 void create_encrypted_file(char *username, char *objname, char *passphrase){
   char filename[strlen(OBJECT_DIR) + strlen(username) + strlen(CONCAT) + strlen(objname) + 1];
   char buffer[BUFFERSIZE];
-  char *plaintext[BIG_BUFFERSIZE];
+  char *plaintext;
   unsigned char *iv = create_init_vector();
-  unsigned char *key = md5_key(passphrase);
+  unsigned char *key = md5_key(passphrase, strlen(passphrase));
 
   snprintf(filename, sizeof(filename), "%s%s%s%s", OBJECT_DIR, username, CONCAT, objname);
+  plaintext = calloc(1,1);
 
   // Get plaintext
   while (fgets(buffer, BUFFERSIZE, stdin) != NULL){
-    if ((strlen(plaintext) + strlen(buffer)) < BIG_BUFFERSIZE) { strcat(plaintext, buffer); }
-    else { printf("[Objput ERROR]: input size too large. \n"); exit(-1); }
+    plaintext = realloc(plaintext, strlen(plaintext) + 1 + strlen(buffer));
+    if (!plaintext) { printf("[Objput ERROR]: fail to read input \n"); exit(-1); }
+    strcat(plaintext, buffer);
   }
 
   // Write encrypted file
